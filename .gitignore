@@ -1,0 +1,12 @@
+# Data exports - don't commit raw CSVs
+*.csv
+
+# Environment variables / secrets
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
