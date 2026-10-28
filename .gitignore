@@ -1,14 +1,24 @@
-# Data exports - don't commit raw CSVs
-*.csv
-
-# Environment variables / secrets
-.env
+# Secrets and local environment files
+.env*
+!.env.example
 *.key
+*.pem
+
+# Data exports
+*.csv
+data/raw/
+baseline.txt
 
 # Python
 __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
 
-baseline.txt
+# Notebook-generated artifacts
+**/.ipynb_checkpoints/
+notebooks/output/
+notebooks/outputs/
+*.nbconvert.ipynb
