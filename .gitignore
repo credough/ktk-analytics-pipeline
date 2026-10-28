@@ -6,7 +6,8 @@
 
 # Data exports
 *.csv
-data/raw/
+data/raw/**
+!data/raw/.gitkeep
 baseline.txt
 
 # Python

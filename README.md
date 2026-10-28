@@ -23,13 +23,14 @@ This means adding a new platform (Instagram, Brevo email, etc.) later is just ne
 ## Usage
 
 ```bash
-pip install supabase
+python -m pip install -e .
 
 export SUPABASE_URL="https://your-project.supabase.co"
 export SUPABASE_KEY="your-service-role-key"
 
-python load_metrics.py --platform fb --folder "/path/to/FB/exports"
-python load_metrics.py --platform ig --folder "/path/to/IG/exports"
+python -m ktk_pipeline.jobs.load_csv --platform fb --folder "/path/to/FB/exports"
+python -m ktk_pipeline.jobs.load_csv --platform ig --folder "/path/to/IG/exports"
+python -m ktk_pipeline.jobs.fb_insights --start 2026-01-01
 ```
 
 ## Expected file names per folder
