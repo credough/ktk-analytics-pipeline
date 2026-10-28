@@ -14,13 +14,13 @@ Date rule: the API's end_time is the END of the day. Convert it to
 America/Los_Angeles and subtract one day to get the same date the CSV uses.
 
 Usage:
-  python fb_insights_etl.py --start 2026-01-01          # backfill to yesterday
-  python fb_insights_etl.py                             # daily run: last 3 days
-  python fb_insights_etl.py --start 2026-07-07 --end 2026-07-15 --dry-run
+    python -m ktk_pipeline.jobs.fb_insights --start 2026-01-01          # backfill to yesterday
+    python -m ktk_pipeline.jobs.fb_insights                    # daily run: last 3 days
+    python -m ktk_pipeline.jobs.fb_insights --start 2026-07-07 --end 2026-07-15 --dry-run
 
 Environment variables (never hardcode these or commit them):
   PAGE_ID, FB_SYSTEM_TOKEN, SUPABASE_URL, SUPABASE_KEY
-Requires: pip install requests supabase tzdata
+Requires: install the project dependencies with `python -m pip install -e .`
 """
 
 import argparse

@@ -9,8 +9,8 @@ All exports share the same structure:
   Row 4+: data rows
 
 Usage:
-  python load_metrics.py --platform fb --folder "C:\path\to\FB"
-  python load_metrics.py --platform ig --folder "C:\path\to\IG"
+    python -m ktk_pipeline.jobs.load_csv --platform fb --folder "C:\path\to\FB"
+    python -m ktk_pipeline.jobs.load_csv --platform ig --folder "C:\path\to\IG"
 """
 
 import csv
