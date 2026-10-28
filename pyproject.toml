@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ktk-analytics-pipeline"
+version = "0.1.0"
+description = "KadaKareer social media analytics pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "requests",
+    "supabase",
+    "tzdata",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "pre-commit",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
