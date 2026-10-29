@@ -9,13 +9,14 @@ All exports share the same structure:
   Row 4+: data rows
 
 Usage:
-    python -m ktk_pipeline.jobs.load_csv --platform fb --folder "C:\path\to\FB"
-    python -m ktk_pipeline.jobs.load_csv --platform ig --folder "C:\path\to\IG"
+    python -m ktk_pipeline.jobs.load_csv --platform fb --folder "C:\\path\to\\FB"
+    python -m ktk_pipeline.jobs.load_csv --platform ig --folder "C:\\path\to\\IG"
 """
 
-import csv
 import argparse
+import csv
 import os
+
 from supabase import create_client
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
@@ -102,8 +103,8 @@ def main():
         ).execute()
         print(f"  Upserted batch {i // batch_size + 1}: {len(batch)} rows")
 
-    print(f"\nDone. Verify with:")
-    print(f"  select metric_name, count(*), min(date), max(date)")
+    print("\nDone. Verify with:")
+    print("  select metric_name, count(*), min(date), max(date)")
     print(f"  from fact_daily_metrics where platform_id = '{platform_id}' group by metric_name;")
 
 
