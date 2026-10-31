@@ -22,4 +22,4 @@ venv/
 **/.ipynb_checkpoints/
 notebooks/output/
 notebooks/outputs/
-*.nbconvert.ipynb
+*.nbconvert.ipynb*.egg-info/
