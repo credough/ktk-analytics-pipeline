@@ -24,12 +24,16 @@ Requires: install the project dependencies with `python -m pip install -e .`
 """
 
 import argparse
-import os
+import re
 import sys
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import requests
+
+from ktk_pipeline.config.settings import MetaSettings, SupabaseSettings
+from ktk_pipeline.db.client import get_client
+from ktk_pipeline.db.repository import DailyMetric, upsert_daily_metrics
 
 GRAPH = "https://graph.facebook.com/v26.0"
 LA = ZoneInfo("America/Los_Angeles")
@@ -44,6 +48,12 @@ METRICS = {
 }
 
 
+def _redact_graph_error(message: str, token: str) -> str:
+    """Remove access tokens and EAA-prefixed strings from Graph API errors."""
+    redacted = message.replace(token, "[REDACTED]") if token else message
+    return re.sub(r"EAA\S*", "[REDACTED]", redacted)
+
+
 def graph_get(path, token, params=None):
     """GET from the Graph API. Errors print only Meta's message, never the URL."""
     query = dict(params or {})
@@ -55,7 +65,8 @@ def graph_get(path, token, params=None):
         sys.exit(f"Graph API returned a non-JSON response (HTTP {resp.status_code}).")
     if resp.status_code != 200 or "error" in body:
         message = body.get("error", {}).get("message", f"HTTP {resp.status_code}")
-        sys.exit(f"Graph API error on '{path}': {message}")
+        safe_message = _redact_graph_error(str(message), token)
+        sys.exit(f"Graph API error on '{path}': {safe_message}")
     return body
 
 
@@ -93,6 +104,10 @@ def fetch_metric(page_id, page_token, api_metric, start, end):
 
 
 def main():
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", help="YYYY-MM-DD (default: --days back from end)")
     ap.add_argument("--end", help="YYYY-MM-DD (default: yesterday, Pacific time)")
@@ -107,10 +122,11 @@ def main():
              else end - timedelta(days=args.days - 1))
     print(f"Range: {start} -> {end}")
 
-    page_id = os.environ["PAGE_ID"]
-    page_token = get_page_token(page_id, os.environ["FB_SYSTEM_TOKEN"])
+    meta_settings = MetaSettings.from_env()
+    page_id = meta_settings.page_id
+    page_token = get_page_token(page_id, meta_settings.system_token)
 
-    records = []
+    records: list[DailyMetric] = []
     for metric_name, api_metric in METRICS.items():
         series = fetch_metric(page_id, page_token, api_metric, start, end)
         print(f"{metric_name}: {len(series)} days  ({api_metric})")
@@ -131,14 +147,12 @@ def main():
         print(f"Dry run: {len(records)} rows, nothing written.")
         return
 
-    from supabase import create_client
-    supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
-    for i in range(0, len(records), 500):
-        batch = records[i:i + 500]
-        supabase.table("fact_daily_metrics").upsert(
-            batch, on_conflict="date,platform_id,metric_name"
-        ).execute()
-        print(f"Upserted batch {i // 500 + 1}: {len(batch)} rows")
+    client = get_client(SupabaseSettings.from_env())
+
+    def report_batch(batch_number: int, batch_size: int) -> None:
+        print(f"Upserted batch {batch_number}: {batch_size} rows")
+
+    upsert_daily_metrics(client, records, on_batch=report_batch)
     print(f"Done: {len(records)} rows.")
 
 

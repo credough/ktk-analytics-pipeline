@@ -17,12 +17,9 @@ import argparse
 import csv
 import os
 
-from supabase import create_client
-
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_KEY = os.environ["SUPABASE_KEY"]
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+from ktk_pipeline.config.settings import SupabaseSettings
+from ktk_pipeline.db.client import get_client
+from ktk_pipeline.db.repository import DailyMetric, upsert_daily_metrics
 
 # Filename -> metric_name mapping. Same filenames used across FB and IG,
 # EXCEPT Instagram uses Reach.csv instead of Viewers.csv (different metric
@@ -64,6 +61,10 @@ def parse_meta_csv(filepath):
 
 
 def main():
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--platform", required=True, choices=["fb", "ig"],
                          help="Platform id to tag these rows with")
@@ -71,10 +72,11 @@ def main():
                          help="Folder containing the CSV exports")
     args = parser.parse_args()
 
+    client = get_client(SupabaseSettings.from_env())
     platform_id = args.platform
     uploads_dir = args.folder
 
-    all_records = []
+    all_records: list[DailyMetric] = []
 
     for filename, metric_name in FILE_METRIC_MAP.items():
         filepath = os.path.join(uploads_dir, filename)
@@ -94,14 +96,10 @@ def main():
 
     print(f"\nTotal records to upsert: {len(all_records)}")
 
-    batch_size = 500
-    for i in range(0, len(all_records), batch_size):
-        batch = all_records[i:i + batch_size]
-        supabase.table("fact_daily_metrics").upsert(
-            batch,
-            on_conflict="date,platform_id,metric_name"
-        ).execute()
-        print(f"  Upserted batch {i // batch_size + 1}: {len(batch)} rows")
+    def report_batch(batch_number: int, batch_size: int) -> None:
+        print(f"  Upserted batch {batch_number}: {batch_size} rows")
+
+    upsert_daily_metrics(client, all_records, on_batch=report_batch)
 
     print("\nDone. Verify with:")
     print("  select metric_name, count(*), min(date), max(date)")
